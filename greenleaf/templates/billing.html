@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Billing{% endblock %}
+{% block body %}
+<header class="head"><h1>New bill</h1></header>
+<section class="grid2 bill-grid">
+  <div class="panel"><h2>Products</h2>
+    <input id="search" placeholder="Search products" autofocus>
+    <div id="plist" class="plist"></div>
+  </div>
+  <div class="panel"><h2>Current bill</h2>
+    <div id="err" class="flash error" hidden></div>
+    <table><tbody id="cart"></tbody></table>
+    <p id="empty" class="empty">Pick products from the list to start a bill.</p>
+    <div class="totals">
+      <label>Discount %<input id="disc" type="number" min="0" max="100" value="0"></label>
+      <div class="row"><span>Subtotal</span><b id="sub">₹0.00</b></div>
+      <div class="row grand"><span>Total</span><b id="tot">₹0.00</b></div>
+    </div>
+    <button id="pay" class="btn wide" disabled>Create bill</button>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+const PRODUCTS = {{ products|tojson }};
+const cart = {};
+const $ = id => document.getElementById(id);
+const money = n => '₹' + n.toFixed(2);
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function drawList() {
+  const q = $('search').value.toLowerCase();
+  $('plist').innerHTML = '';
+  PRODUCTS.filter(p => p.name.toLowerCase().includes(q)).slice(0, 40).forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'pitem';
+    b.innerHTML = `<span>${esc(p.name)}<small>${esc(p.category)} · ${p.stock_qty} in stock</small></span><b>${money(p.unit_price)}</b>`;
+    b.onclick = () => { cart[p.product_id] = Math.min((cart[p.product_id] || 0) + 1, p.stock_qty); drawCart(); };
+    $('plist').appendChild(b);
+  });
+}
+function drawCart() {
+  const body = $('cart'); body.innerHTML = ''; let sub = 0;
+  Object.entries(cart).forEach(([id, qty]) => {
+    const p = PRODUCTS.find(x => x.product_id == id); sub += qty * p.unit_price;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(p.name)}</td>
+      <td><input class="qty" type="number" min="1" max="${p.stock_qty}" value="${qty}"></td>
+      <td class="r">${money(qty * p.unit_price)}</td><td><button class="link danger">Remove</button></td>`;
+    tr.querySelector('input').onchange = e => { const v = parseInt(e.target.value);
+      if (isNaN(v) || v < 1) delete cart[id]; else cart[id] = Math.min(v, p.stock_qty); drawCart(); };
+    tr.querySelector('button').onclick = () => { delete cart[id]; drawCart(); };
+    body.appendChild(tr);
+  });
+  const d = Math.min(Math.max(parseFloat($('disc').value) || 0, 0), 100);
+  $('sub').textContent = money(sub); $('tot').textContent = money(sub * (1 - d / 100));
+  $('empty').hidden = Object.keys(cart).length > 0; $('pay').disabled = !Object.keys(cart).length;
+}
+$('search').oninput = drawList; $('disc').oninput = drawCart;
+$('pay').onclick = async () => {
+  $('pay').disabled = true;
+  const res = await fetch(location.href, {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({discount: $('disc').value, items: Object.entries(cart).map(([id, q]) => ({product_id: id, quantity: q}))})});
+  const j = await res.json();
+  if (j.ok) location.href = j.url; else { $('err').textContent = j.error; $('err').hidden = false; $('pay').disabled = false; }
+};
+drawList(); drawCart();
+</script>
+{% endblock %}

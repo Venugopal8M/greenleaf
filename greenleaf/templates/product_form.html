@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if pid else 'Add' }} product{% endblock %}
+{% block body %}
+<header class="head"><h1>{{ 'Edit product' if pid else 'Add product' }}</h1></header>
+<form method="post" class="panel form">
+  <label>Name<input name="name" value="{{ p.name or '' }}" required></label>
+  <label>Category<select name="category" required>
+    {% for c in categories %}<option {{ 'selected' if c == p.category }}>{{ c }}</option>{% endfor %}</select></label>
+  <label>Unit price (₹)<input name="unit_price" type="number" step="0.01" min="0" value="{{ p.unit_price if p.unit_price is not none else '' }}" required></label>
+  <label>Stock quantity<input name="stock_qty" type="number" min="0" value="{{ p.stock_qty if p.stock_qty is not none else '' }}" required></label>
+  <label>Reorder level<input name="reorder_level" type="number" min="0" value="{{ p.reorder_level }}"></label>
+  <label>Expiry date<input name="expiry_date" type="date" value="{{ p.expiry_date or '' }}"></label>
+  <label>Supplier<select name="supplier_id"><option value="">None</option>
+    {% for s in suppliers %}<option value="{{ s.supplier_id }}" {{ 'selected' if s.supplier_id|string == p.supplier_id|string }}>{{ s.name }}</option>{% endfor %}</select></label>
+  <div class="actions"><button class="btn">Save product</button><a class="btn ghost" href="{{ url_for('main.products') }}">Cancel</a></div>
+</form>
+{% endblock %}

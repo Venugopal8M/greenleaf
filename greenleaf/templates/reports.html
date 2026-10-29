@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block body %}
+<header class="head"><h1>Reports</h1>
+  <form class="filters" method="get">
+    <label>From<input type="date" name="start" value="{{ start }}"></label>
+    <label>To<input type="date" name="end" value="{{ end }}"></label>
+    <button class="btn ghost">Apply</button>
+  </form></header>
+<section class="kpis" id="kpis"></section>
+<div class="seg" role="group" aria-label="Chart metric">
+  <button class="on" data-m="revenue">Revenue</button><button data-m="quantity">Quantity</button></div>
+<section class="grid2">
+  <div class="panel"><h2>Daily sales</h2><div id="daily" class="chart"></div>
+    <a href="{{ url_for('main.reports_export', name='daily', start=start, end=end) }}">Export CSV</a></div>
+  <div class="panel"><h2>Monthly trend</h2><div id="monthly" class="chart"></div>
+    <a href="{{ url_for('main.reports_export', name='monthly', start=start, end=end) }}">Export CSV</a></div>
+  <div class="panel"><h2>Top 10 products</h2><div id="top" class="chart"></div>
+    <a href="{{ url_for('main.reports_export', name='top', start=start, end=end) }}">Export CSV</a></div>
+  <div class="panel"><h2>Category share</h2><div id="cats" class="chart"></div></div>
+</section>
+<section class="grid2">
+  <div class="panel"><h2>Low stock</h2><div id="t-low" class="scroll"></div>
+    <a href="{{ url_for('main.reports_export', name='low_stock') }}">Export CSV</a></div>
+  <div class="panel"><h2>Expiring in 15 days</h2><div id="t-exp" class="scroll"></div>
+    <a href="{{ url_for('main.reports_export', name='expiry') }}">Export CSV</a></div>
+  <div class="panel"><h2>Slow-moving (30 days)</h2><div id="t-slow" class="scroll"></div></div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+<script>
+let metric = 'revenue';
+const url = "{{ url_for('main.reports_api') }}?start={{ start }}&end={{ end }}";
+loadReports(url, () => metric);
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+  metric = b.dataset.m;
+  document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+  redrawReports();
+});
+</script>
+{% endblock %}

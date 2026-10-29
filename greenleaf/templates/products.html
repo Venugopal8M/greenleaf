@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+{% block body %}
+<header class="head"><h1>Products</h1>
+  <div class="actions">
+    <a class="btn ghost" href="{{ url_for('main.products_export') }}">Export CSV</a>
+    <form action="{{ url_for('main.products_import') }}" method="post" enctype="multipart/form-data" class="inline">
+      <input type="file" name="file" accept=".csv" required><button class="btn ghost">Import CSV</button></form>
+    <a class="btn" href="{{ url_for('main.product_add') }}">Add product</a>
+  </div>
+</header>
+<form class="filters" method="get">
+  <input name="q" value="{{ q }}" placeholder="Search by name or category">
+  <select name="category"><option value="">All categories</option>
+    {% for c in categories %}<option {{ 'selected' if c == cat }}>{{ c }}</option>{% endfor %}</select>
+  <select name="status"><option value="">Any status</option>
+    <option value="low" {{ 'selected' if status == 'low' }}>Low stock</option>
+    <option value="expiring" {{ 'selected' if status == 'expiring' }}>Expiring soon</option></select>
+  <button class="btn ghost">Filter</button>
+</form>
+<div class="panel flush"><div class="scroll"><table>
+  <thead><tr><th>Name</th><th>Category</th><th class="r">Price</th><th class="r">Stock</th><th>Expiry</th><th></th></tr></thead>
+  <tbody>
+  {% for p in rows %}
+  <tr><td>{{ p.name }}</td><td>{{ p.category }}</td><td class="r">₹{{ '%.2f'|format(p.unit_price) }}</td>
+    <td class="r">{{ p.stock_qty }} {% if p.stock_qty <= p.reorder_level %}<b class="tag bad">Low</b>{% endif %}</td>
+    <td>{{ p.expiry_date or '-' }}</td>
+    <td class="r"><a href="{{ url_for('main.product_edit', pid=p.product_id) }}">Edit</a>
+      <form class="inline" method="post" action="{{ url_for('main.product_delete', pid=p.product_id) }}"
+            onsubmit="return confirm('Delete this product?')"><button class="link danger">Delete</button></form></td></tr>
+  {% else %}<tr><td colspan="6" class="empty">No products match. Clear the filters or add a product.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{% endblock %}
