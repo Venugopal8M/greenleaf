@@ -5,7 +5,6 @@ from datetime import date, timedelta
 
 import pandas as pd
 import streamlit as st
-from werkzeug.security import check_password_hash
 
 import database
 import models
@@ -77,10 +76,6 @@ def login_page():
         finally:
             conn.close()
 
-    st.info(
-        "Demo Admin: admin / admin123\n\n"
-        "Demo Cashier: cashier / cashier123"
-    )
 
 
 def dashboard_page(conn):
